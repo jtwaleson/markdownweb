@@ -8,6 +8,15 @@ from Cheetah.Template import Template
 import shutil
 
 
+class mdw_value():
+    def __init__(self, origin, value):
+        self.origin = origin
+        self.value = value
+
+    def __str__(self):
+        return self.value
+
+
 class writeable_dir(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         target_dir = os.path.abspath(values)
@@ -39,12 +48,6 @@ class readable_dir(argparse.Action):
                     prospective_dir))
 
 
-parser = argparse.ArgumentParser()
-parser.add_argument('input_dir',  action=readable_dir,  default=os.getcwd())
-parser.add_argument('output_dir', action=writeable_dir, default=os.getcwd())
-args = parser.parse_args()
-
-
 def read_dir_config(directory, parent_config):
     new_config = copy.deepcopy(parent_config)
     config_file = os.path.join(directory, 'mdw')
@@ -54,19 +57,27 @@ def read_dir_config(directory, parent_config):
         cf.close()
         if config:
             for (key, value) in config.items():
-                new_config[key] = (directory, value)
+                if key == 'template' and 'path_to_template' in new_config:
+                    new_config.pop('path_to_template')
+                new_config[key] = mdw_value(directory, value)
+
+    if 'path_to_template' not in new_config:
+        new_config['path_to_template'] = ''
+    else:
+        new_config['path_to_template'] += '../'
+
     return new_config
 
 
 def get_template(config):
     tmpl = None
     if 'template' in config:
-        (directory, tmpl_file) = config['template']
-        f = os.path.join(directory, tmpl_file)
+        v = config['template']
+        f = os.path.join(v.origin, v.value)
         if os.path.isfile(f):
-            tmpl = Template(file=f)
+            tmpl = Template(file=f, searchList=[config])
     if not tmpl:
-        tmpl = Template("$content")
+        tmpl = Template("$content", searchlist=[config])
     return tmpl
 
 
@@ -76,12 +87,12 @@ def get_config_and_template(directory, config):
     return (config, template)
 
 
-def process_dir(indir, outdir, config={}):
+def process_dir(indir, outdir, parent_config={}):
 
     if not os.path.isdir(outdir):
         os.mkdir(outdir)
 
-    (config, template) = get_config_and_template(indir, config)
+    (config, template) = get_config_and_template(indir, parent_config)
     for item in os.listdir(indir):
         path = os.path.join(indir, item)
         outpath = os.path.join(outdir, item)
@@ -90,14 +101,19 @@ def process_dir(indir, outdir, config={}):
         elif path[-3:] == '.md':
             input_file = open(path, mode="r")
             text = input_file.read()
-            content = markdown.markdown(text)
-            template.content = content
+            template.content = markdown.markdown(text)
             output_file = open(outpath[:-3] + '.html', 'w')
             output_file.write(template.respond())
         elif item == 'mdw':
             pass
         else:
             shutil.copyfile(path, outpath)
+
+
+parser = argparse.ArgumentParser()
+parser.add_argument('input_dir',  action=readable_dir)
+parser.add_argument('output_dir', action=writeable_dir)
+args = parser.parse_args()
 
 indir = os.path.abspath(args.input_dir)
 outdir = os.path.abspath(args.output_dir)

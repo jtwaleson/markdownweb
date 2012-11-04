@@ -66,11 +66,15 @@ def read_dir_config(directory, parent_config):
     if 'path_from_template' not in new_config:
         new_config['path_from_template'] = ''
     else:
-        new_config['path_from_template'] += os.path.basename(directory)+"/"
+        new_config['path_from_template'] += os.path.basename(directory) + "/"
     if 'path_to_template' not in new_config:
         new_config['path_to_template'] = ''
     else:
         new_config['path_to_template'] += '../'
+    if 'path' not in new_config:
+        new_config['path'] = ''
+    else:
+        new_config['path'] += os.path.basename(directory) + "/"
 
     return new_config
 
@@ -102,6 +106,8 @@ def process_dir(indir, outdir, parent_config={}):
     for item in os.listdir(indir):
         path = os.path.join(indir, item)
         outpath = os.path.join(outdir, item)
+        template.currentfile = item
+        template.currentpath = config['path']
         if os.path.basename(path)[0] == '.':
             pass
         elif os.path.isdir(path):

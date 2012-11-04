@@ -96,7 +96,9 @@ def process_dir(indir, outdir, parent_config={}):
     for item in os.listdir(indir):
         path = os.path.join(indir, item)
         outpath = os.path.join(outdir, item)
-        if os.path.isdir(path):
+        if os.path.basename(path)[0] == '.':
+            pass
+        elif os.path.isdir(path):
             process_dir(path, outpath, config)
         elif path[-3:] == '.md':
             input_file = open(path, mode="r")

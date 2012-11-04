@@ -57,10 +57,16 @@ def read_dir_config(directory, parent_config):
         cf.close()
         if config:
             for (key, value) in config.items():
-                if key == 'template' and 'path_to_template' in new_config:
-                    new_config.pop('path_to_template')
+                if key == 'template':
+                    for template_var in ['path_to_template', 'path_from_template']:
+                        if template_var in new_config:
+                            new_config.pop(template_var)
                 new_config[key] = mdw_value(directory, value)
 
+    if 'path_from_template' not in new_config:
+        new_config['path_from_template'] = ''
+    else:
+        new_config['path_from_template'] += os.path.basename(directory)+"/"
     if 'path_to_template' not in new_config:
         new_config['path_to_template'] = ''
     else:

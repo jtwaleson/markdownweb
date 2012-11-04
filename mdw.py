@@ -50,7 +50,7 @@ class readable_dir(argparse.Action):
 
 def read_dir_config(directory, parent_config):
     new_config = copy.deepcopy(parent_config)
-    config_file = os.path.join(directory, 'mdw')
+    config_file = os.path.join(directory, '.mdwconfig')
     if os.path.isfile(config_file):
         cf = open(config_file)
         config = yaml.safe_load(cf)
@@ -104,7 +104,7 @@ def process_dir(indir, outdir, parent_config={}):
             template.content = markdown.markdown(text)
             output_file = open(outpath[:-3] + '.html', 'w')
             output_file.write(template.respond())
-        elif item == 'mdw':
+        elif item == '.mdwconfig':
             pass
         else:
             shutil.copyfile(path, outpath)
